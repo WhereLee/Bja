@@ -8,6 +8,7 @@ import com.inteink.common.utils.PageUtils;
 import com.inteink.common.utils.StringUtils;
 import com.inteink.modules.biz.annotation.BizLog;
 import com.inteink.modules.biz.annotation.TimeCost;
+import com.inteink.modules.biz.gateway.DeviceResult;
 import com.inteink.modules.biz.gateway.RodCommandGateway;
 import com.inteink.modules.biz.mapper.BizConverterMapper;
 import com.inteink.modules.biz.mapper.BizLiftingRodMapper;
@@ -124,8 +125,9 @@ public class LiftingRodServiceImpl extends ServiceImpl<BizLiftingRodMapper, BizL
         if (!RodActionEnum.isValid(action)) {
             throw new RRException("非法动作，只能 1-升 2-降");
         }
-        if (!rodCommandGateway.send(rodId, action)) {
-            throw new RRException("道闸控制下发失败");
+        DeviceResult result = rodCommandGateway.send(rodId, action);
+        if (result != DeviceResult.SUCCESS) {
+            throw new RRException("道闸下发失败: " + result);
         }
         rod.setRodState(action);
         rod.setRodUpdatetime(System.currentTimeMillis() / 1000);
