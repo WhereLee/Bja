@@ -573,3 +573,135 @@ INSERT INTO `sys_param` VALUES (8, '音频上传大小限制', 'audio_upload_lim
 INSERT INTO `sys_param` VALUES (9, '视频上传大小限制', 'video_upload_limit', '1024', '视频上传大小限制（单位：MB） 默认1024MB', unix_timestamp(now()), unix_timestamp(now()), 0);
 INSERT INTO `sys_param` VALUES (10, '分片上传分片大小', 'part_size', '10', '分片上传分片大小（单位：MB） 默认10M', unix_timestamp(now()), unix_timestamp(now()), 0);
 
+
+-- ----------------------------
+-- biz 升降杆/升降策略模块表结构（导出自运行库 network-beilun）
+-- ----------------------------
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+DROP TABLE IF EXISTS `biz_lifting_strategy`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `biz_lifting_strategy` (
+  `strategy_id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 自增',
+  `strategy_name` varchar(256) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '策略名称',
+  `strategy_action` tinyint(1) DEFAULT NULL COMMENT '动作 1-升 2-降',
+  `strategy_type` tinyint(1) DEFAULT NULL COMMENT '类型 1-每日 2-每周 3-每月 4-指定日期（一次性）',
+  `strategy_dates` varchar(128) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '具体日期 （周一、周三；1号、15号；2024年4月12日等）',
+  `strategy_remark` varchar(512) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '备注',
+  `strategy_check_state` tinyint(1) DEFAULT NULL COMMENT '审核状态 0-待审核 1-审核通过 1-审核不通过',
+  `strategy_check_user` bigint DEFAULT NULL COMMENT '审核人',
+  `strategy_check_time` bigint DEFAULT NULL COMMENT '审核时间戳 秒',
+  `strategy_creator` bigint DEFAULT NULL COMMENT '创建人',
+  `strategy_createtime` bigint DEFAULT NULL COMMENT '创建时间戳 秒',
+  `strategy_updatetime` bigint DEFAULT NULL COMMENT '更新时间戳 秒',
+  `strategy_status` bigint DEFAULT '0' COMMENT '状态 0-有效 >0 无效 默认0',
+  PRIMARY KEY (`strategy_id`) USING BTREE,
+  UNIQUE KEY `strategy_name` (`strategy_name`,`strategy_status`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=139 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC COMMENT='升降策略';
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `biz_lifting_strategy_detail`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `biz_lifting_strategy_detail` (
+  `detail_id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 自增',
+  `strategy_id` bigint DEFAULT NULL COMMENT '升降策略ID',
+  `detail_begin` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '开始时间  05:00',
+  `detail_end` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '截止时间  17:00',
+  PRIMARY KEY (`detail_id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=149 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC COMMENT='升降策略时间明细';
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `biz_lifting_strategy_rod`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `biz_lifting_strategy_rod` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 自增',
+  `strategy_id` bigint DEFAULT NULL COMMENT '升降策略ID',
+  `rod_id` bigint DEFAULT NULL COMMENT '升降杆ID',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=139 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC COMMENT='策略升降杆关联';
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `biz_lifting_strategy_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `biz_lifting_strategy_log` (
+  `log_id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 自增',
+  `strategy_id` bigint DEFAULT NULL COMMENT '升降策略ID',
+  `log_type` tinyint DEFAULT NULL COMMENT '类型 1-创建 2-修改 3-审核通过 4-审核不通过',
+  `log_remark` varchar(512) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '备注',
+  `log_opeartor` bigint DEFAULT NULL COMMENT '操作人',
+  `log_operate_time` bigint DEFAULT NULL COMMENT '操作时间戳 秒',
+  PRIMARY KEY (`log_id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=214 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC COMMENT='升降策略审核日志';
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `biz_lifting_rod`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `biz_lifting_rod` (
+  `rod_id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 自增',
+  `rod_name` varchar(128) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '名称',
+  `rod_addr` varchar(256) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '安装位置',
+  `rod_longtitude` decimal(10,5) DEFAULT NULL COMMENT '经度',
+  `rod_offline` tinyint(1) DEFAULT '0' COMMENT '是否在线 0 不在线 1在线',
+  `rod_latitude` decimal(10,5) DEFAULT NULL COMMENT '维度',
+  `rod_remark` varchar(512) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '备注',
+  `rod_state` tinyint(1) DEFAULT '0' COMMENT '升降状态 0-不显示（默认） 1-升 2-降',
+  `rod_creator` bigint DEFAULT NULL COMMENT '创建人',
+  `rod_createtime` bigint DEFAULT NULL COMMENT '创建时间戳 秒',
+  `rod_updatetime` bigint DEFAULT NULL COMMENT '更新时间戳 秒',
+  `rod_status` bigint DEFAULT '0' COMMENT '状态 0-有效 >0 无效 默认0',
+  PRIMARY KEY (`rod_id`) USING BTREE,
+  UNIQUE KEY `rod_name` (`rod_name`,`rod_status`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC COMMENT='升降杆';
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `biz_lifting_rod_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `biz_lifting_rod_log` (
+  `log_id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 自增',
+  `rod_id` bigint DEFAULT NULL COMMENT '升降杆ID',
+  `log_type` tinyint(1) DEFAULT NULL COMMENT '类型 1-手动 2-自动',
+  `log_action` tinyint(1) DEFAULT NULL COMMENT '动作 1-升 2-降',
+  `strategy_id` bigint DEFAULT NULL COMMENT '升降策略ID',
+  `remark` varchar(512) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '备注',
+  `log_result` tinyint(1) DEFAULT NULL COMMENT '操作结果 1-成功 2-失败',
+  `log_operate_time` bigint DEFAULT NULL COMMENT '操作时间戳 秒',
+  PRIMARY KEY (`log_id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=465 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC COMMENT='升降杆升降日志';
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `biz_converter`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `biz_converter` (
+  `converter_id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 自增',
+  `converter_port` int DEFAULT NULL COMMENT '设备端口',
+  `converter_sn` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '设备编号 SN',
+  `converter_ip` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT 'IP地址',
+  `rod_id` bigint DEFAULT NULL COMMENT '关联升降杆',
+  `converter_creator` bigint DEFAULT NULL COMMENT '创建人',
+  `converter_createtime` bigint DEFAULT NULL COMMENT '创建时间戳 秒',
+  `converter_updatetime` bigint DEFAULT NULL COMMENT '更新时间戳 秒',
+  `converter_status` bigint DEFAULT '0' COMMENT '状态 0-有效 >0 无效 默认0',
+  PRIMARY KEY (`converter_id`) USING BTREE,
+  UNIQUE KEY `converter_sn` (`converter_sn`,`converter_status`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC COMMENT='转换器';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+

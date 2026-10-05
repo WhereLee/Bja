@@ -1,96 +1,53 @@
 package com.inteink.modules.biz.model.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+
 import java.io.Serializable;
 
 /**
- * 转换器实体类（升降杆硬件对接设备）
- * 对应表：biz_converter
- * @author 实习开发
- * @date 2025-11-27
+ * 转换器：道闸背后的网络控制设备（台账 + 绑定到某根杆）。
+ * 无独立生命周期；rod_id 为空表示已登记、暂未绑定杆。
  */
+@ApiModel("转换器实体")
 @Data
-@TableName("biz_converter") // 精准映射数据表名
+@TableName("biz_converter")
 public class BizConverter implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 主键 自增
-     */
+    @ApiModelProperty("转换器ID")
     @TableId(value = "converter_id", type = IdType.AUTO)
     private Long converterId;
 
-    /**
-     * 设备端口
-     */
-    @TableField("converter_port")
+    @ApiModelProperty("设备端口")
     private Integer converterPort;
 
-    /**
-     * 设备编号 SN
-     */
-    @TableField("converter_sn")
+    @ApiModelProperty("设备编号 SN")
     private String converterSn;
 
-    /**
-     * IP地址
-     */
-    @TableField("converter_ip")
+    @ApiModelProperty("IP地址")
     private String converterIp;
 
-    /**
-     * 关联升降杆ID（关联biz_lifting_rod表的rod_id）
-     */
-    @TableField("rod_id")
+    @ApiModelProperty("绑定的升降杆ID（可空=未绑定）")
     private Long rodId;
 
-    /**
-     * 创建人（关联用户表ID）
-     */
-    @TableField("converter_creator")
+    @ApiModelProperty("创建人")
     private Long converterCreator;
 
-    /**
-     * 创建时间戳 秒
-     */
-    @TableField("converter_createtime")
+    @ApiModelProperty("创建时间戳(秒)")
     private Long converterCreatetime;
 
-    /**
-     * 更新时间戳 秒
-     */
-    @TableField("converter_updatetime")
+    @ApiModelProperty("更新时间戳(秒)")
     private Long converterUpdatetime;
 
-    /**
-     * 状态 0-有效 >0 无效 默认0
-     */
-    @TableField("converter_status")
+    @ApiModelProperty("状态 0-有效 >0-无效(逻辑删除)")
     private Long converterStatus;
 
-    // ========== 扩展：硬件设备常用校验（可选） ==========
-    /**
-     * 校验IP地址格式是否合法（简单正则）
-     * @return IP格式是否合法
-     */
-    public boolean checkIpFormat() {
-        if (converterIp == null) {
-            return false;
-        }
-        // 简单IPV4正则（仅适配基础场景，复杂场景可引入第三方工具类）
-        String ipRegex = "^((2[0-4]\\d|25[0-5]|[01]?\\d\\d?)\\.){3}(2[0-4]\\d|25[0-5]|[01]?\\d\\d?)$";
-        return converterIp.matches(ipRegex);
-    }
-
-    /**
-     * 校验端口号是否合法（0-65535）
-     * @return 端口是否合法
-     */
-    public boolean checkPortValid() {
-        return converterPort != null && converterPort >= 0 && converterPort <= 65535;
+    public boolean isValid() {
+        return converterStatus != null && converterStatus == 0L;
     }
 }

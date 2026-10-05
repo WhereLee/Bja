@@ -4,3 +4,6 @@
 /res
 /temp
 /target
+
+# 本地参考数据（公司 dev 库导出，含内网IP/设备SN），不入公开库
+lifting-rod.sql

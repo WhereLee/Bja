@@ -4,28 +4,28 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.io.Serializable;
+
+/**
+ * 道闸杆 列表/分页查询条件。
+ */
+@ApiModel("杆查询条件")
 @Data
-@ApiModel(value = "升降杆查询表单", description = "升降杆操作/日志查询参数")
-public class LiftingRodForm {
-    @ApiModelProperty(value = "升降杆ID", example = "1")
-    private Long rodId;
+public class LiftingRodForm implements Serializable {
+    private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "操作类型：1-手动，2-自动", example = "1")
-    private Integer logType;
+    @ApiModelProperty("名称（模糊）")
+    private String rodName;
 
-    @ApiModelProperty(value = "操作动作：1-升，2-降", example = "1")
-    private Integer logAction;
+    @ApiModelProperty("在线状态 0-离线 1-在线")
+    private Integer rodOffline;
 
-    @ApiModelProperty(value = "页码", example = "1")
+    @ApiModelProperty("升降状态 0-默认 1-升 2-降")
+    private Integer rodState;
+
+    @ApiModelProperty("页码")
     private Integer pageNum = 1;
 
-    @ApiModelProperty(value = "每页条数", example = "10")
+    @ApiModelProperty("每页条数")
     private Integer pageSize = 10;
-
-    // 以下为公司项目通用参数（对齐SysLogForm）
-    @ApiModelProperty(hidden = true) // 隐藏，无需前端传
-    private Long userId;
-
-    @ApiModelProperty(hidden = true)
-    private String sqlFilter;
 }
