@@ -24,16 +24,7 @@ public interface LiftingRodService extends IService<BizLiftingRod> {
     LiftingRodVO detail(Long rodId);
 
     /**
-     * 手动升降：下发指令 + 更新状态 + 记日志。
-     *
-     * @param rodId    杆ID
-     * @param action   1-升 2-降
-     * @param operator 操作人
-     */
-    void manualOperate(Long rodId, Integer action, Long operator);
-
-    /**
-     * 通用杆操作（手动/自动共用）：下发指令 + 更新状态 + 记日志。
+     * 通用杆操作（手动/自动共用）：下发指令 + 更新状态；日志由 @BizLog 切面统一记录。
      *
      * @param type       手动/自动
      * @param strategyId 自动时来源策略（手动传 null）

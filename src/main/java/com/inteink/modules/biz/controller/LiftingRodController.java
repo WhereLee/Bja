@@ -5,6 +5,7 @@ import com.inteink.common.utils.PageUtils;
 import com.inteink.common.utils.Result;
 import com.inteink.modules.biz.model.entity.BizLiftingRod;
 import com.inteink.modules.biz.model.enums.RodActionEnum;
+import com.inteink.modules.biz.model.enums.RodLogTypeEnum;
 import com.inteink.modules.biz.model.form.LiftingRodForm;
 import com.inteink.modules.biz.model.vo.LiftingRodVO;
 import com.inteink.modules.biz.service.LiftingRodService;
@@ -73,7 +74,7 @@ public class LiftingRodController extends AbstractController {
     @PostMapping("/lift/{rodId}")
     @RequiresPermissions("biz:liftingrod:update")
     public Result lift(@PathVariable("rodId") Long rodId) {
-        liftingRodService.manualOperate(rodId, RodActionEnum.UP.getCode(), getUserId());
+        liftingRodService.operateRod(rodId, RodActionEnum.UP.getCode(), RodLogTypeEnum.MANUAL, null);
         return Result.ok(null, "升杆成功");
     }
 
@@ -82,7 +83,7 @@ public class LiftingRodController extends AbstractController {
     @PostMapping("/lower/{rodId}")
     @RequiresPermissions("biz:liftingrod:update")
     public Result lower(@PathVariable("rodId") Long rodId) {
-        liftingRodService.manualOperate(rodId, RodActionEnum.DOWN.getCode(), getUserId());
+        liftingRodService.operateRod(rodId, RodActionEnum.DOWN.getCode(), RodLogTypeEnum.MANUAL, null);
         return Result.ok(null, "降杆成功");
     }
 }

@@ -10,6 +10,7 @@ import com.inteink.modules.biz.factory.StrategyScheduleFactory;
 import com.inteink.modules.biz.mapper.BizLiftingRodMapper;
 import com.inteink.modules.biz.mapper.BizLiftingStrategyDetailMapper;
 import com.inteink.modules.biz.mapper.BizLiftingStrategyLogMapper;
+import com.inteink.modules.biz.annotation.BizLog;
 import com.inteink.modules.biz.mapper.BizLiftingStrategyMapper;
 import com.inteink.modules.biz.mapper.BizLiftingStrategyRodMapper;
 import com.inteink.modules.biz.model.entity.BizLiftingRod;
@@ -17,9 +18,9 @@ import com.inteink.modules.biz.model.entity.BizLiftingStrategy;
 import com.inteink.modules.biz.model.entity.BizLiftingStrategyDetail;
 import com.inteink.modules.biz.model.entity.BizLiftingStrategyLog;
 import com.inteink.modules.biz.model.entity.BizLiftingStrategyRod;
+import com.inteink.modules.biz.model.enums.BizLogKind;
 import com.inteink.modules.biz.model.enums.RodActionEnum;
 import com.inteink.modules.biz.model.enums.StrategyCheckStateEnum;
-import com.inteink.modules.biz.model.enums.StrategyLogTypeEnum;
 import com.inteink.modules.biz.model.enums.StrategyTypeEnum;
 import com.inteink.modules.biz.model.form.StrategyForm;
 import com.inteink.modules.biz.model.form.StrategyQueryForm;
@@ -52,6 +53,7 @@ public class LiftingStrategyServiceImpl extends ServiceImpl<BizLiftingStrategyMa
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @BizLog(kind = BizLogKind.STRATEGY_AUDIT, type = "CREATE")
     public Long saveStrategy(StrategyForm form, Long operator) {
         validateForm(form);
         Integer dup = this.count(new LambdaQueryWrapper<BizLiftingStrategy>()
@@ -76,12 +78,12 @@ public class LiftingStrategyServiceImpl extends ServiceImpl<BizLiftingStrategyMa
 
         resetDetail(strategy.getStrategyId(), form);
         resetRelations(strategy.getStrategyId(), form.getRodIds());
-        writeLog(strategy.getStrategyId(), StrategyLogTypeEnum.CREATE, "新增", operator);
         return strategy.getStrategyId();
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @BizLog(kind = BizLogKind.STRATEGY_AUDIT, type = "UPDATE")
     public void updateStrategy(StrategyForm form, Long operator) {
         BizLiftingStrategy strategy = getValidStrategy(form.getStrategyId());
         validateForm(form);
@@ -99,11 +101,11 @@ public class LiftingStrategyServiceImpl extends ServiceImpl<BizLiftingStrategyMa
         if (StrategyCheckStateEnum.PASS.getCode().equals(strategy.getStrategyCheckState())) {
             scheduleFactory.createJobs(strategy, getDetail(strategy.getStrategyId()));
         }
-        writeLog(strategy.getStrategyId(), StrategyLogTypeEnum.UPDATE, "修改", operator);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @BizLog(kind = BizLogKind.STRATEGY_AUDIT, type = "AUDIT")
     public void audit(Long strategyId, boolean pass, String remark, Long operator) {
         BizLiftingStrategy strategy = getValidStrategy(strategyId);
         if (!StrategyCheckStateEnum.PENDING.getCode().equals(strategy.getStrategyCheckState())) {
@@ -120,8 +122,6 @@ public class LiftingStrategyServiceImpl extends ServiceImpl<BizLiftingStrategyMa
         if (pass) {
             scheduleFactory.createJobs(strategy, getDetail(strategyId));
         }
-        writeLog(strategyId, pass ? StrategyLogTypeEnum.AUDIT_PASS : StrategyLogTypeEnum.AUDIT_REJECT,
-                StringUtils.isNotBlank(remark) ? remark : (pass ? "审核通过" : "审核驳回"), operator);
     }
 
     @Override
@@ -255,16 +255,6 @@ public class LiftingStrategyServiceImpl extends ServiceImpl<BizLiftingStrategyMa
             rel.setRodId(rodId);
             relationMapper.insert(rel);
         }
-    }
-
-    private void writeLog(Long strategyId, StrategyLogTypeEnum type, String remark, Long operator) {
-        BizLiftingStrategyLog log = new BizLiftingStrategyLog();
-        log.setStrategyId(strategyId);
-        log.setLogType(type.getCode());
-        log.setLogRemark(remark);
-        log.setLogOperator(operator);
-        log.setLogOperateTime(System.currentTimeMillis() / 1000);
-        logMapper.insert(log);
     }
 
     private LiftingStrategyVO buildVO(BizLiftingStrategy s) {

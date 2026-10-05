@@ -6,18 +6,19 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.inteink.common.exception.RRException;
 import com.inteink.common.utils.PageUtils;
 import com.inteink.common.utils.StringUtils;
+import com.inteink.modules.biz.annotation.BizLog;
 import com.inteink.modules.biz.gateway.RodCommandGateway;
 import com.inteink.modules.biz.mapper.BizConverterMapper;
 import com.inteink.modules.biz.mapper.BizLiftingRodMapper;
 import com.inteink.modules.biz.model.entity.BizConverter;
 import com.inteink.modules.biz.model.entity.BizLiftingRod;
+import com.inteink.modules.biz.model.enums.BizLogKind;
 import com.inteink.modules.biz.model.enums.RodActionEnum;
 import com.inteink.modules.biz.model.enums.RodLogTypeEnum;
 import com.inteink.modules.biz.model.enums.RodStateEnum;
 import com.inteink.modules.biz.model.form.LiftingRodForm;
 import com.inteink.modules.biz.model.vo.LiftingRodVO;
 import com.inteink.modules.biz.service.LiftingRodService;
-import com.inteink.modules.biz.service.RodOperationLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +36,6 @@ public class LiftingRodServiceImpl extends ServiceImpl<BizLiftingRodMapper, BizL
     private static final long STATUS_VALID = 0L;
 
     private final RodCommandGateway rodCommandGateway;
-    private final RodOperationLogService rodOperationLogService;
     private final BizConverterMapper converterMapper;
 
     @Override
@@ -116,26 +116,18 @@ public class LiftingRodServiceImpl extends ServiceImpl<BizLiftingRodMapper, BizL
     }
 
     @Override
-    public void manualOperate(Long rodId, Integer action, Long operator) {
-        operateRod(rodId, action, RodLogTypeEnum.MANUAL, null);
-    }
-
-    @Override
+    @BizLog(kind = BizLogKind.ROD_OP)
     public void operateRod(Long rodId, Integer action, RodLogTypeEnum type, Long strategyId) {
         BizLiftingRod rod = getValidRod(rodId);
         if (!RodActionEnum.isValid(action)) {
             throw new RRException("非法动作，只能 1-升 2-降");
         }
-        boolean ok = rodCommandGateway.send(rodId, action);
-        if (ok) {
-            rod.setRodState(action);
-            rod.setRodUpdatetime(System.currentTimeMillis() / 1000);
-            this.updateById(rod);
-        }
-        rodOperationLogService.record(rodId, action, type, strategyId, ok);
-        if (!ok) {
+        if (!rodCommandGateway.send(rodId, action)) {
             throw new RRException("道闸控制下发失败");
         }
+        rod.setRodState(action);
+        rod.setRodUpdatetime(System.currentTimeMillis() / 1000);
+        this.updateById(rod);
     }
 
     private BizLiftingRod getValidRod(Long rodId) {
