@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.inteink.modules.sys.dao.SysDictionaryDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="com.inteink.modules.sys.entity.SysDictionaryEntity" id="sysDictionaryMap">
+        <result property="dicId" column="dic_id"/>
+        <result property="dicSort" column="dic_sort"/>
+        <result property="dicKey" column="dic_key"/>
+        <result property="dicValue" column="dic_value"/>
+        <result property="dicRemark" column="dic_remark"/>
+        <result property="dicCreator" column="dic_creator"/>
+        <result property="dicCreatetime" column="dic_createtime"/>
+        <result property="dicUpdatetime" column="dic_updatetime"/>
+        <result property="dicStatus" column="dic_status"/>
+    </resultMap>
+
+    <!-- 取最大的Key -->
+    <select id="getLatestKey" resultType="java.lang.Integer">
+        SELECT
+            IFNULL(MAX(dic_key),0)
+        FROM
+            sys_dictionary
+        WHERE
+            dic_sort = #{dicSort}
+    </select>
+
+    <!-- 设置IP黑白名单 -->
+    <update id="setIpList">
+        UPDATE sys_dictionary
+        SET dic_value =
+        CASE
+                WHEN dic_key = 'white_list' THEN #{iplistVO.whiteList}
+                WHEN dic_key = 'black_list' THEN #{iplistVO.blackList}
+        END
+        WHERE
+            dic_sort = 'iplist'
+    </update>
+
+    <!-- 设置短信 -->
+    <update id="setSms">
+        UPDATE sys_dictionary
+        SET dic_value =
+        CASE
+                WHEN dic_key = 'aliyun_appkey' THEN #{smsVO.aliyunAppkey}
+                WHEN dic_key = 'aliyun_appserve' THEN #{smsVO.aliyunAppserve}
+                WHEN dic_key = 'aliyun_signname' THEN #{smsVO.aliyunSignname}
+                WHEN dic_key = 'aliyun_templatecode' THEN #{smsVO.aliyunTemplatecode}
+        END
+        WHERE
+            dic_sort = 'sms'
+    </update>
+
+    <!-- 配置短信-赛迪云 -->
+    <update id="setSubmail">
+        UPDATE sys_dictionary
+        SET dic_value =
+        CASE
+                WHEN dic_key = 'submail_appid' THEN #{submailVO.submailAppid}
+                WHEN dic_key = 'submail_appkey' THEN #{submailVO.submailAppkey}
+                WHEN dic_key = 'submail_project' THEN #{submailVO.submailProject}
+        END
+        WHERE
+            dic_sort = 'submail'
+    </update>
+
+    <!-- 配置企业微信 -->
+    <update id="setQyweixin">
+        UPDATE sys_dictionary
+        SET dic_value =
+        CASE
+                WHEN dic_key = 'qyweixin_corpid' THEN #{qyweixinVO.qyweixinCorpid}
+                WHEN dic_key = 'qyweixin_agentid' THEN #{qyweixinVO.qyweixinAgentid}
+                WHEN dic_key = 'qyweixin_corsecret' THEN #{qyweixinVO.qyweixinCorsecret}
+        END
+        WHERE
+            dic_sort = 'qyweixin'
+    </update>
+
+    <!-- 配置微信小程序 -->
+    <update id="setWechat">
+        UPDATE sys_dictionary
+        SET dic_value =
+        CASE
+                WHEN dic_key = 'wechat_appid' THEN #{wechatVO.wechatAppid}
+                WHEN dic_key = 'wechat_appsecret' THEN #{wechatVO.wechatAppsecret}
+        END
+        WHERE
+            dic_sort = 'wechat'
+    </update>
+
+    <!-- 配置阿里OSS -->
+    <update id="setAlioss">
+        UPDATE sys_dictionary
+        SET dic_value =
+        CASE
+                WHEN dic_key = 'alioss_endpoint' THEN #{aliossVO.aliossEndpoint}
+                WHEN dic_key = 'alioss_ak' THEN #{aliossVO.aliossAk}
+                WHEN dic_key = 'alioss_sk' THEN #{aliossVO.aliossSk}
+                WHEN dic_key = 'alioss_bucket_pic' THEN #{aliossVO.aliossBucketPic}
+                WHEN dic_key = 'alioss_bucket_audio' THEN #{aliossVO.aliossBucketAudio}
+                WHEN dic_key = 'alioss_bucket_video' THEN #{aliossVO.aliossBucketVideo}
+        END
+        WHERE
+            dic_sort = 'alioss'
+    </update>
+
+</mapper>

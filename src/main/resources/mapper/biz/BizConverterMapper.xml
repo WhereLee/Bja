@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 对应ConverterMapper接口 -->
+<mapper namespace="com.inteink.modules.biz.mapper.BizConverterMapper">
+
+    <!-- 通用查询字段（和实体类/数据库字段一一对应） -->
+    <sql id="Base_Column_List">
+        converter_id, converter_port, converter_sn, converter_ip,
+        rod_id, converter_creator, converter_createtime,
+        converter_updatetime, converter_status
+    </sql>
+
+    <!-- 关联升降杆名称的查询字段（扩展） -->
+    <sql id="Converter_Join_Rod_Column">
+        c.converter_id, c.converter_port, c.converter_sn, c.converter_ip,
+        c.rod_id, c.converter_creator, c.converter_createtime,
+        c.converter_updatetime, c.converter_status,
+        r.rod_name as rodName <!-- 关联升降杆名称 -->
+    </sql>
+
+    <!-- 分页查询转换器（支持关联升降杆名称+条件筛选） -->
+    <select id="queryConverterPage" resultType="com.inteink.modules.biz.model.entity.BizConverter">
+        SELECT
+        <include refid="Converter_Join_Rod_Column"/>
+        FROM biz_converter c
+        LEFT JOIN biz_lifting_rod r ON c.rod_id = r.rod_id <!-- 关联升降杆表 -->
+        WHERE 1=1
+        <!-- 筛选：关联的升降杆ID -->
+        <if test="form.rodId != null">
+            AND c.rod_id = #{form.rodId}
+        </if>
+        <!-- 筛选：转换器SN（模糊查询） -->
+        <if test="form.converterSn != null and form.converterSn != ''">
+            AND c.converter_sn LIKE CONCAT('%', #{form.converterSn}, '%')
+        </if>
+        <!-- 只查有效转换器 -->
+        AND c.converter_status = 0
+        <!-- 排序：按创建时间降序 -->
+        ORDER BY c.converter_createtime DESC
+    </select>
+
+    <!-- 基础新增（MyBatis-Plus自动生成，可省略；若需自定义可加） -->
+    <insert id="insertConverter" parameterType="com.inteink.modules.biz.model.entity.BizConverter">
+        INSERT INTO biz_converter (
+            converter_port, converter_sn, converter_ip, rod_id,
+            converter_creator, converter_createtime, converter_updatetime, converter_status
+        ) VALUES (
+                     #{converterPort}, #{converterSn}, #{converterIp}, #{rodId},
+                     #{converterCreator}, #{converterCreatetime}, #{converterUpdatetime}, #{converterStatus}
+                 )
+    </insert>
+
+    <!-- 基础修改（MyBatis-Plus自动生成，可省略） -->
+    <update id="updateConverter" parameterType="com.inteink.modules.biz.model.entity.BizConverter">
+        UPDATE biz_converter
+        <set>
+            <if test="converterPort != null">converter_port = #{converterPort},</if>
+            <if test="converterSn != null">converter_sn = #{converterSn},</if>
+            <if test="converterIp != null">converter_ip = #{converterIp},</if>
+            <if test="rodId != null">rod_id = #{rodId},</if>
+            <if test="converterUpdatetime != null">converter_updatetime = #{converterUpdatetime},</if>
+            <if test="converterStatus != null">converter_status = #{converterStatus}</if>
+        </set>
+        WHERE converter_id = #{converterId}
+    </update>
+
+</mapper>

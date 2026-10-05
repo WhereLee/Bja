@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须与Mapper接口全类名一致 -->
+<mapper namespace="com.inteink.modules.biz.mapper.BizLiftingStrategyMapper">
+
+    <!-- 通用结果映射：复用字段映射规则，减少冗余 -->
+    <resultMap id="BaseResultMap" type="com.inteink.modules.biz.model.entity.BizLiftingStrategy">
+        <id column="strategy_id" property="strategyId"/>
+        <result column="strategy_name" property="strategyName"/>
+        <result column="strategy_action" property="strategyAction"/>
+        <result column="strategy_type" property="strategyType"/>
+        <result column="strategy_dates" property="strategyDates"/>
+        <result column="strategy_remark" property="strategyRemark"/>
+        <result column="strategy_creator" property="strategyCreator"/>
+        <result column="strategy_createtime" property="strategyCreatetime"/>
+        <result column="strategy_updatetime" property="strategyUpdatetime"/>
+        <result column="strategy_status" property="strategyStatus"/>
+        <result column="strategy_check_state" property="strategyCheckState"/>
+    </resultMap>
+
+    <!-- 原有方法selectValidStrategies的SQL映射（解决原报错） -->
+    <select id="selectValidStrategies" resultMap="BaseResultMap">
+        SELECT
+            strategy_id, strategy_name, strategy_action, strategy_type,
+            strategy_dates, strategy_remark, strategy_creator,
+            strategy_createtime, strategy_updatetime, strategy_status,
+            strategy_check_state
+        FROM biz_lifting_strategy
+        WHERE strategy_status = 0 -- 0=有效状态
+          AND strategy_check_state = 1 -- 1=审核通过
+    </select>
+
+    <!-- 新增：按名称统计记录数（用于名称重复校验） -->
+    <select id="countByStrategyName" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM biz_lifting_strategy
+        WHERE strategy_name = #{strategyName}
+          AND strategy_status = 0 -- 仅校验有效策略，已删除/失效的不统计
+    </select>
+
+</mapper>
