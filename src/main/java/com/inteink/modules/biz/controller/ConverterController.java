@@ -5,7 +5,9 @@ import com.inteink.common.utils.PageUtils;
 import com.inteink.common.utils.Result;
 import com.inteink.modules.biz.model.entity.BizConverter;
 import com.inteink.modules.biz.model.form.ConverterForm;
+import com.inteink.modules.biz.model.vo.DeviceInfoVO;
 import com.inteink.modules.biz.service.ConverterService;
+import com.inteink.modules.biz.service.DeviceQueryService;
 import com.inteink.modules.sys.controller.AbstractController;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class ConverterController extends AbstractController {
 
     private final ConverterService converterService;
+    private final DeviceQueryService deviceQueryService;
 
     @ApiOperation("分页查询转换器")
     @ApiOperationSupport(order = 1)
@@ -74,5 +77,13 @@ public class ConverterController extends AbstractController {
     public Result unbind(@PathVariable("converterId") Long converterId) {
         converterService.unbind(converterId);
         return Result.ok(null, "解绑成功");
+    }
+
+    @ApiOperation("查询设备实时状态（按地址探测）")
+    @ApiOperationSupport(order = 7)
+    @GetMapping("/device/{converterId}")
+    @RequiresPermissions("biz:converter:info")
+    public Result<DeviceInfoVO> device(@PathVariable("converterId") Long converterId) {
+        return Result.ok(deviceQueryService.probe(converterId));
     }
 }
