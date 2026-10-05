@@ -2,6 +2,7 @@ package com.inteink.modules.biz.gateway.impl;
 
 import com.inteink.modules.biz.gateway.RodCommandGateway;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "biz.device", name = "mode", havingValue = "mock", matchIfMissing = true)
 public class MockRodCommandGateway implements RodCommandGateway {
 
     @Override
