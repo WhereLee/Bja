@@ -11,6 +11,7 @@ import com.inteink.modules.biz.mapper.BizLiftingRodMapper;
 import com.inteink.modules.biz.mapper.BizLiftingStrategyDetailMapper;
 import com.inteink.modules.biz.mapper.BizLiftingStrategyLogMapper;
 import com.inteink.modules.biz.annotation.BizLog;
+import com.inteink.modules.biz.annotation.TimeCost;
 import com.inteink.modules.biz.mapper.BizLiftingStrategyMapper;
 import com.inteink.modules.biz.mapper.BizLiftingStrategyRodMapper;
 import com.inteink.modules.biz.model.entity.BizLiftingRod;
@@ -105,6 +106,7 @@ public class LiftingStrategyServiceImpl extends ServiceImpl<BizLiftingStrategyMa
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @TimeCost("策略审核")
     @BizLog(kind = BizLogKind.STRATEGY_AUDIT, type = "AUDIT")
     public void audit(Long strategyId, boolean pass, String remark, Long operator) {
         BizLiftingStrategy strategy = getValidStrategy(strategyId);

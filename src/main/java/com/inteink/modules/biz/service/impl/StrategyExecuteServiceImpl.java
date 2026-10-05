@@ -1,6 +1,7 @@
 package com.inteink.modules.biz.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.inteink.modules.biz.annotation.TimeCost;
 import com.inteink.modules.biz.mapper.BizLiftingStrategyMapper;
 import com.inteink.modules.biz.mapper.BizLiftingStrategyRodMapper;
 import com.inteink.modules.biz.model.entity.BizLiftingStrategy;
@@ -25,6 +26,7 @@ public class StrategyExecuteServiceImpl implements StrategyExecuteService {
     private final LiftingRodService liftingRodService;
 
     @Override
+    @TimeCost("策略批量驱动")
     public int executeByStrategy(Long strategyId) {
         if (strategyId == null) {
             log.warn("【策略执行】strategyId 为空，跳过");

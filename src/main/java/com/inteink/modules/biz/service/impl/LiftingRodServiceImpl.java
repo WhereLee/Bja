@@ -7,6 +7,7 @@ import com.inteink.common.exception.RRException;
 import com.inteink.common.utils.PageUtils;
 import com.inteink.common.utils.StringUtils;
 import com.inteink.modules.biz.annotation.BizLog;
+import com.inteink.modules.biz.annotation.TimeCost;
 import com.inteink.modules.biz.gateway.RodCommandGateway;
 import com.inteink.modules.biz.mapper.BizConverterMapper;
 import com.inteink.modules.biz.mapper.BizLiftingRodMapper;
@@ -116,6 +117,7 @@ public class LiftingRodServiceImpl extends ServiceImpl<BizLiftingRodMapper, BizL
     }
 
     @Override
+    @TimeCost("道闸下发")
     @BizLog(kind = BizLogKind.ROD_OP)
     public void operateRod(Long rodId, Integer action, RodLogTypeEnum type, Long strategyId) {
         BizLiftingRod rod = getValidRod(rodId);
