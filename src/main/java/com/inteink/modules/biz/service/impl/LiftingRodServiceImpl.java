@@ -117,6 +117,11 @@ public class LiftingRodServiceImpl extends ServiceImpl<BizLiftingRodMapper, BizL
 
     @Override
     public void manualOperate(Long rodId, Integer action, Long operator) {
+        operateRod(rodId, action, RodLogTypeEnum.MANUAL, null);
+    }
+
+    @Override
+    public void operateRod(Long rodId, Integer action, RodLogTypeEnum type, Long strategyId) {
         BizLiftingRod rod = getValidRod(rodId);
         if (!RodActionEnum.isValid(action)) {
             throw new RRException("非法动作，只能 1-升 2-降");
@@ -127,7 +132,7 @@ public class LiftingRodServiceImpl extends ServiceImpl<BizLiftingRodMapper, BizL
             rod.setRodUpdatetime(System.currentTimeMillis() / 1000);
             this.updateById(rod);
         }
-        rodOperationLogService.record(rodId, action, RodLogTypeEnum.MANUAL, null, ok);
+        rodOperationLogService.record(rodId, action, type, strategyId, ok);
         if (!ok) {
             throw new RRException("道闸控制下发失败");
         }

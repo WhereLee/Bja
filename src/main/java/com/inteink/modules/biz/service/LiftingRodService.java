@@ -3,6 +3,7 @@ package com.inteink.modules.biz.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.inteink.common.utils.PageUtils;
 import com.inteink.modules.biz.model.entity.BizLiftingRod;
+import com.inteink.modules.biz.model.enums.RodLogTypeEnum;
 import com.inteink.modules.biz.model.form.LiftingRodForm;
 import com.inteink.modules.biz.model.vo.LiftingRodVO;
 
@@ -30,4 +31,12 @@ public interface LiftingRodService extends IService<BizLiftingRod> {
      * @param operator 操作人
      */
     void manualOperate(Long rodId, Integer action, Long operator);
+
+    /**
+     * 通用杆操作（手动/自动共用）：下发指令 + 更新状态 + 记日志。
+     *
+     * @param type       手动/自动
+     * @param strategyId 自动时来源策略（手动传 null）
+     */
+    void operateRod(Long rodId, Integer action, RodLogTypeEnum type, Long strategyId);
 }
