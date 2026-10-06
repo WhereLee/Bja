@@ -9,7 +9,7 @@ import com.inteink.common.utils.StringUtils;
 import com.inteink.modules.biz.annotation.BizLog;
 import com.inteink.modules.biz.annotation.TimeCost;
 import com.inteink.modules.biz.gateway.DeviceResult;
-import com.inteink.modules.biz.gateway.RodCommandGateway;
+import com.inteink.modules.biz.gateway.ReliableRodCommandService;
 import com.inteink.modules.biz.mapper.BizConverterMapper;
 import com.inteink.modules.biz.mapper.BizLiftingRodMapper;
 import com.inteink.modules.biz.model.entity.BizConverter;
@@ -19,7 +19,9 @@ import com.inteink.modules.biz.model.enums.RodActionEnum;
 import com.inteink.modules.biz.model.enums.RodLogTypeEnum;
 import com.inteink.modules.biz.model.enums.RodStateEnum;
 import com.inteink.modules.biz.model.form.LiftingRodForm;
+import com.inteink.modules.biz.model.vo.DeviceInfoVO;
 import com.inteink.modules.biz.model.vo.LiftingRodVO;
+import com.inteink.modules.biz.service.DeviceQueryService;
 import com.inteink.modules.biz.service.LiftingRodService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,7 +39,8 @@ public class LiftingRodServiceImpl extends ServiceImpl<BizLiftingRodMapper, BizL
 
     private static final long STATUS_VALID = 0L;
 
-    private final RodCommandGateway rodCommandGateway;
+    private final ReliableRodCommandService reliableRodCommandService;
+    private final DeviceQueryService deviceQueryService;
     private final BizConverterMapper converterMapper;
 
     @Override
@@ -125,13 +128,53 @@ public class LiftingRodServiceImpl extends ServiceImpl<BizLiftingRodMapper, BizL
         if (!RodActionEnum.isValid(action)) {
             throw new RRException("非法动作，只能 1-升 2-降");
         }
-        DeviceResult result = rodCommandGateway.send(rodId, action);
-        if (result != DeviceResult.SUCCESS) {
-            throw new RRException("道闸下发失败: " + result);
+        DeviceResult result = reliableRodCommandService.execute(rodId, action);
+        long now = System.currentTimeMillis() / 1000;
+        if (result == DeviceResult.SUCCESS) {
+            rod.setRodState(action);
+            rod.setRodOffline(1);
+            rod.setRodUpdatetime(now);
+            this.updateById(rod);
+            return;
         }
-        rod.setRodState(action);
-        rod.setRodUpdatetime(System.currentTimeMillis() / 1000);
+        // 网络类失败（离线/超时）：标离线，便于运维转人工
+        if (result == DeviceResult.OFFLINE || result == DeviceResult.TIMEOUT) {
+            rod.setRodOffline(0);
+            rod.setRodUpdatetime(now);
+            this.updateById(rod);
+        }
+        throw new RRException("道闸下发失败: " + result);
+    }
+
+    @Override
+    public DeviceInfoVO reconcile(Long rodId) {
+        BizLiftingRod rod = getValidRod(rodId);
+        BizConverter conv = converterMapper.selectOne(new LambdaQueryWrapper<BizConverter>()
+                .eq(BizConverter::getRodId, rodId)
+                .eq(BizConverter::getConverterStatus, STATUS_VALID)
+                .last("LIMIT 1"));
+        long now = System.currentTimeMillis() / 1000;
+        if (conv == null) {
+            rod.setRodOffline(0);
+            rod.setRodUpdatetime(now);
+            this.updateById(rod);
+            return null;
+        }
+        DeviceInfoVO vo = deviceQueryService.probe(conv.getConverterId());
+        if (vo == null || !Boolean.TRUE.equals(vo.getOnline())) {
+            rod.setRodOffline(0);
+            rod.setRodUpdatetime(now);
+            this.updateById(rod);
+            return vo;
+        }
+        Integer state = vo.getState();
+        if (state != null && !state.equals(rod.getRodState())) {
+            rod.setRodState(state);
+        }
+        rod.setRodOffline(1);
+        rod.setRodUpdatetime(now);
         this.updateById(rod);
+        return vo;
     }
 
     private BizLiftingRod getValidRod(Long rodId) {

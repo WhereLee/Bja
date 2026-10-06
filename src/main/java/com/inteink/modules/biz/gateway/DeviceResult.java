@@ -12,7 +12,9 @@ public enum DeviceResult {
     /** 连不上/设备离线，可重试 */
     OFFLINE(true),
     /** 设备明确拒绝（500/状态不符），不可重试 */
-    DEVICE_REJECT(false);
+    DEVICE_REJECT(false),
+    /** 重复/并发被去重跳过，未真正下发，不可重试 */
+    SKIPPED_DUPLICATE(false);
 
     private final boolean retryable;
 

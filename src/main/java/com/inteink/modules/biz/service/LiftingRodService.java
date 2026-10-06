@@ -5,6 +5,7 @@ import com.inteink.common.utils.PageUtils;
 import com.inteink.modules.biz.model.entity.BizLiftingRod;
 import com.inteink.modules.biz.model.enums.RodLogTypeEnum;
 import com.inteink.modules.biz.model.form.LiftingRodForm;
+import com.inteink.modules.biz.model.vo.DeviceInfoVO;
 import com.inteink.modules.biz.model.vo.LiftingRodVO;
 
 /**
@@ -30,4 +31,11 @@ public interface LiftingRodService extends IService<BizLiftingRod> {
      * @param strategyId 自动时来源策略（手动传 null）
      */
     void operateRod(Long rodId, Integer action, RodLogTypeEnum type, Long strategyId);
+
+    /**
+     * 对账：拉取该杆绑定设备的真实态，校正 rod_state / rod_offline。
+     *
+     * @return 设备探测视图（可能为 null，若无绑定转换器）
+     */
+    DeviceInfoVO reconcile(Long rodId);
 }
