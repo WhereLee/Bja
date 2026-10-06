@@ -5,8 +5,7 @@ import com.inteink.modules.biz.mapper.BizLiftingRodMapper;
 import com.inteink.modules.biz.model.entity.BizConverter;
 import com.inteink.modules.biz.model.entity.BizLiftingRod;
 import com.inteink.modules.biz.model.vo.DashboardVO;
-import com.inteink.modules.biz.model.vo.DeviceInfoVO;
-import com.inteink.modules.biz.service.DeviceQueryService;
+import com.inteink.modules.biz.service.DeviceStateCache;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -16,10 +15,9 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
- * 看板聚合纯逻辑单测：测 assemble（不依赖 MyBatis-Plus 的 wrapper）。
+ * 看板聚合纯逻辑单测：assemble 读快照（不依赖 MyBatis-Plus/网络）。
  */
 class DashboardServiceImplTest {
 
@@ -45,23 +43,19 @@ class DashboardServiceImplTest {
 
     @Test
     void 汇总在线离线未绑定() {
-        DeviceQueryService probe = mock(DeviceQueryService.class);
         DashboardServiceImpl impl = new DashboardServiceImpl(
-                mock(BizLiftingRodMapper.class), mock(BizConverterMapper.class), probe);
+                mock(BizLiftingRodMapper.class), mock(BizConverterMapper.class), mock(DeviceStateCache.class));
 
         List<BizLiftingRod> rods = Arrays.asList(rod(1), rod(2), rod(3));
         Map<Long, BizConverter> convByRod = new HashMap<>();
         convByRod.put(2L, conv(20, 2));
         convByRod.put(3L, conv(30, 3));
 
-        DeviceInfoVO online = new DeviceInfoVO();
-        online.setOnline(true);
-        online.setState(1);
-        online.setStateDesc("升");
-        when(probe.probe(20L)).thenReturn(online);
-        when(probe.probe(30L)).thenReturn(null); // 不可达 → 离线
+        Map<Long, DeviceStateCache.DevSnapshot> snaps = new HashMap<>();
+        snaps.put(2L, new DeviceStateCache.DevSnapshot(true, 1, "升")); // 在线
+        snaps.put(3L, new DeviceStateCache.DevSnapshot(false, null, null)); // 离线
 
-        DashboardVO d = impl.assemble(rods, convByRod);
+        DashboardVO d = impl.assemble(rods, convByRod, snaps);
 
         assertEquals(3, d.getTotal());
         assertEquals(1, d.getOnlineCount());

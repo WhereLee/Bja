@@ -7,10 +7,9 @@ import com.inteink.modules.biz.model.entity.BizConverter;
 import com.inteink.modules.biz.model.entity.BizLiftingRod;
 import com.inteink.modules.biz.model.enums.RodStateEnum;
 import com.inteink.modules.biz.model.vo.DashboardVO;
-import com.inteink.modules.biz.model.vo.DeviceInfoVO;
 import com.inteink.modules.biz.model.vo.RodLiveVO;
 import com.inteink.modules.biz.service.DashboardService;
-import com.inteink.modules.biz.service.DeviceQueryService;
+import com.inteink.modules.biz.service.DeviceStateCache;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,9 +20,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 看板聚合实现：取有效杆 → 关联绑定转换器 → 逐台探测设备实时态 → 汇总在线/离线。
- * 只读、不改状态；探测为逐台有界超时，适合中小规模。
- * 纯聚合逻辑拆到 assemble(...)，便于不依赖 MyBatis-Plus 的单元测试。
+ * 看板聚合：读设备态快照缓存（由 DeviceStateCache 后台定时刷新），请求路径不再现场探测设备。
+ * 只读、不改状态。
  */
 @Service
 @RequiredArgsConstructor
@@ -33,18 +31,19 @@ public class DashboardServiceImpl implements DashboardService {
 
     private final BizLiftingRodMapper rodMapper;
     private final BizConverterMapper converterMapper;
-    private final DeviceQueryService deviceQueryService;
+    private final DeviceStateCache deviceStateCache;
 
     @Override
     public DashboardVO dashboard() {
         List<BizLiftingRod> rods = rodMapper.selectList(new LambdaQueryWrapper<BizLiftingRod>()
                 .eq(BizLiftingRod::getRodStatus, STATUS_VALID)
                 .orderByDesc(BizLiftingRod::getRodId));
-        return assemble(rods, loadConverters(rods));
+        return assemble(rods, loadConverters(rods), deviceStateCache.snapshot());
     }
 
-    /** 纯聚合：由杆 + (rodId→converter) 组装看板；probe 探测在线/离线。 */
-    DashboardVO assemble(List<BizLiftingRod> rods, Map<Long, BizConverter> convByRod) {
+    /** 纯聚合：由杆 + (rodId→converter) + (rodId→设备快照) 组装看板。 */
+    DashboardVO assemble(List<BizLiftingRod> rods, Map<Long, BizConverter> convByRod,
+                         Map<Long, DeviceStateCache.DevSnapshot> snapshots) {
         List<RodLiveVO> items = new ArrayList<>();
         int online = 0;
         int offline = 0;
@@ -65,12 +64,12 @@ public class DashboardServiceImpl implements DashboardService {
                 vo.setBound(true);
                 vo.setDeviceSn(conv.getConverterSn());
                 vo.setDeviceAddr(conv.getConverterIp() + ":" + conv.getConverterPort());
-                DeviceInfoVO probe = deviceQueryService.probe(conv.getConverterId());
-                boolean devOnline = probe != null && Boolean.TRUE.equals(probe.getOnline());
+                DeviceStateCache.DevSnapshot snap = snapshots.get(rod.getRodId());
+                boolean devOnline = snap != null && snap.online();
                 vo.setDeviceOnline(devOnline);
                 if (devOnline) {
-                    vo.setDeviceState(probe.getState());
-                    vo.setDeviceStateDesc(probe.getStateDesc());
+                    vo.setDeviceState(snap.state());
+                    vo.setDeviceStateDesc(snap.stateDesc());
                     online++;
                 } else {
                     offline++;
