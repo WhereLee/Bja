@@ -4,12 +4,16 @@ import com.inteink.common.exception.RRException;
 import com.inteink.common.utils.StringUtils;
 import com.inteink.modules.biz.model.entity.BizLiftingStrategy;
 import com.inteink.modules.biz.model.enums.StrategyTypeEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 由策略类型 + 时间(HH:mm) 生成 Quartz cron。
  * 字段语义（Quartz）：秒 分 时 日 月 周 [年]。
  */
 public final class StrategyCronUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(StrategyCronUtil.class);
 
     private StrategyCronUtil() {
     }
@@ -44,6 +48,7 @@ public final class StrategyCronUtil {
                 if (StringUtils.isBlank(dates)) {
                     throw new RRException("每月策略需指定日期(如 1,15)");
                 }
+                warnIfShortMonth(dates);
                 return "0 " + minute + " " + hour + " " + dates + " * ?";
             case APPOINT:
                 int[] ymd = parseDate(dates);
@@ -51,6 +56,20 @@ public final class StrategyCronUtil {
                 return "0 " + minute + " " + hour + " " + ymd[1] + " " + ymd[2] + " ? " + ymd[0];
             default:
                 throw new RRException("未支持的策略类型：" + typeEnum);
+        }
+    }
+
+    /** 每月策略若含 29/30/31，在无该日的月份不会触发——提示，不改用户输入 */
+    private static void warnIfShortMonth(String dates) {
+        for (String d : dates.split(",")) {
+            try {
+                int day = Integer.parseInt(d.trim());
+                if (day > 28) {
+                    log.warn("每月策略日期 {} 在部分月份不存在，该月不触发（如需月末请用 L）", day);
+                }
+            } catch (NumberFormatException ignore) {
+                // 含 L 等非数字，跳过校验
+            }
         }
     }
 

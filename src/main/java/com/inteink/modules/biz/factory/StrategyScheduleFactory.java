@@ -12,10 +12,15 @@ import com.inteink.modules.job.service.ScheduleJobService;
 import com.inteink.modules.job.utils.ScheduleUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.quartz.CronScheduleBuilder;
+import org.quartz.CronTrigger;
 import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.TriggerKey;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.TimeZone;
 
 /**
  * 策略 ↔ 定时任务工厂：审核通过时按时间窗生成成对任务(BEGIN/END)，
@@ -33,6 +38,9 @@ public class StrategyScheduleFactory {
     private static final Integer ACTION_LOWER = 2;
     private static final long JOB_STATUS_VALID = 0L;
     private static final int JOB_STATE_NORMAL = 0;
+
+    /** biz 策略任务固定时区，避免随 JVM 默认时区漂移 */
+    private static final TimeZone BIZ_TIMEZONE = TimeZone.getTimeZone("Asia/Shanghai");
 
     private final ScheduleJobService scheduleJobService;
     private final Scheduler scheduler;
@@ -76,6 +84,29 @@ public class StrategyScheduleFactory {
         scheduleJobService.save(job);
         ScheduleJobEntity full = scheduleJobService.getById(job.getJobId());
         ScheduleUtils.createScheduleJob(scheduler, full);
+        applyFixedTimeZone(full.getJobId());
+    }
+
+    /** 将 biz 策略 trigger 固定为 Asia/Shanghai（保留 DoNothing misfire） */
+    private void applyFixedTimeZone(Long jobId) {
+        try {
+            CronTrigger trigger = ScheduleUtils.getCronTrigger(scheduler, jobId);
+            if (trigger == null) {
+                return;
+            }
+            TriggerKey tk = ScheduleUtils.getTriggerKey(jobId);
+            CronScheduleBuilder builder = CronScheduleBuilder
+                    .cronSchedule(trigger.getCronExpression())
+                    .inTimeZone(BIZ_TIMEZONE)
+                    .withMisfireHandlingInstructionDoNothing();
+            CronTrigger rebuilt = trigger.getTriggerBuilder()
+                    .withIdentity(tk)
+                    .withSchedule(builder)
+                    .build();
+            scheduler.rescheduleJob(tk, rebuilt);
+        } catch (SchedulerException e) {
+            log.warn("固定策略任务时区失败 jobId={}", jobId, e);
+        }
     }
 
     public void removeJobs(Long strategyId) {

@@ -24,8 +24,14 @@ public class LiftingStrategyTask implements ITask {
         try {
             JSONObject json = JSON.parseObject(params);
             Long strategyId = json.getLong("strategyId");
-            log.info("【策略定时任务】触发，strategyId={}, params={}", strategyId, params);
-            strategyExecuteService.executeByStrategy(strategyId);
+            Integer action = json.getInteger("action");
+            String nodeType = json.getString("nodeType");
+            log.info("【策略定时任务】触发，strategyId={}, action={}, node={}", strategyId, action, nodeType);
+            if (action != null && nodeType != null) {
+                strategyExecuteService.executeByStrategy(strategyId, action, nodeType);
+            } else {
+                strategyExecuteService.executeByStrategy(strategyId);
+            }
         } catch (Exception e) {
             log.error("【策略定时任务】执行异常，params=" + params, e);
         }
