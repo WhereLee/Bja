@@ -52,8 +52,8 @@ public final class StrategyCronUtil {
                 return "0 " + minute + " " + hour + " " + dates + " * ?";
             case APPOINT:
                 int[] ymd = parseDate(dates);
-                // 指定年份，确保只触发一次
-                return "0 " + minute + " " + hour + " " + ymd[1] + " " + ymd[2] + " ? " + ymd[0];
+                // 指定年份，确保只触发一次；Quartz 顺序为 日 月，故 day=ymd[2]、month=ymd[1]
+                return "0 " + minute + " " + hour + " " + ymd[2] + " " + ymd[1] + " ? " + ymd[0];
             default:
                 throw new RRException("未支持的策略类型：" + typeEnum);
         }

@@ -330,12 +330,15 @@
                     <includeSystemScope>true</includeSystemScope>
                 </configuration>
             </plugin>
-            <!-- 跳过单元测试 -->
+            <!-- 运行单元测试；排除历史临时草稿测试(需外部DB/网络) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <skipTests>true</skipTests>
+                    <excludes>
+                        <exclude>**/com/inteink/main/**</exclude>
+                        <exclude>**/com/inteink/modules/sys/test/**</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
         </plugins>

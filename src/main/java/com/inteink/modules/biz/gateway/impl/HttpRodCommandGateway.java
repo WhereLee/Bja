@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.inteink.modules.biz.gateway.DeviceResult;
+import com.inteink.modules.biz.gateway.DeviceResultClassifier;
 import com.inteink.modules.biz.gateway.RodCommandGateway;
 import com.inteink.modules.biz.mapper.BizConverterMapper;
 import com.inteink.modules.biz.model.entity.BizConverter;
@@ -13,12 +14,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.List;
 
@@ -71,28 +70,16 @@ public class HttpRodCommandGateway implements RodCommandGateway {
 
     private DeviceResult classifyResponse(HttpResponse<String> resp, Integer action) {
         int code = resp.statusCode();
-        if (code == 503) {
-            return DeviceResult.OFFLINE;
+        Integer state = null;
+        if (code == 200) {
+            JSONObject o = JSON.parseObject(resp.body());
+            state = o == null ? null : o.getInteger("state");
         }
-        if (code != 200) {
-            return DeviceResult.DEVICE_REJECT;
-        }
-        JSONObject o = JSON.parseObject(resp.body());
-        Integer state = o == null ? null : o.getInteger("state");
-        return (state != null && state.equals(action)) ? DeviceResult.SUCCESS : DeviceResult.DEVICE_REJECT;
+        return DeviceResultClassifier.classifyResponse(code, state, action);
     }
 
     private DeviceResult classifyException(Exception e) {
-        if (e instanceof HttpTimeoutException) {
-            return DeviceResult.TIMEOUT;
-        }
-        if (e instanceof ConnectException) {
-            return DeviceResult.OFFLINE;
-        }
-        if (e instanceof java.net.SocketTimeoutException) {
-            return DeviceResult.TIMEOUT;
-        }
-        return DeviceResult.OFFLINE;
+        return DeviceResultClassifier.classifyException(e);
     }
 
     private BizConverter findConverter(Long rodId) {
