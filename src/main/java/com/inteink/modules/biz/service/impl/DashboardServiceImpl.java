@@ -11,6 +11,7 @@ import com.inteink.modules.biz.model.vo.RodLiveVO;
 import com.inteink.modules.biz.service.DashboardService;
 import com.inteink.modules.biz.service.DeviceStateCache;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -33,12 +34,18 @@ public class DashboardServiceImpl implements DashboardService {
     private final BizConverterMapper converterMapper;
     private final DeviceStateCache deviceStateCache;
 
+    /** true=读快照缓存（默认）；false=每请求现场并发探测（压测 A/B 用）。 */
+    @Value("${biz.dashboard.cache:true}")
+    private boolean cacheEnabled;
+
     @Override
     public DashboardVO dashboard() {
         List<BizLiftingRod> rods = rodMapper.selectList(new LambdaQueryWrapper<BizLiftingRod>()
                 .eq(BizLiftingRod::getRodStatus, STATUS_VALID)
                 .orderByDesc(BizLiftingRod::getRodId));
-        return assemble(rods, loadConverters(rods), deviceStateCache.snapshot());
+        Map<Long, DeviceStateCache.DevSnapshot> snaps =
+                cacheEnabled ? deviceStateCache.snapshot() : deviceStateCache.probeNow();
+        return assemble(rods, loadConverters(rods), snaps);
     }
 
     /** 纯聚合：由杆 + (rodId→converter) + (rodId→设备快照) 组装看板。 */

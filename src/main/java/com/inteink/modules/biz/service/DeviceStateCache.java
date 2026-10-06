@@ -64,6 +64,12 @@ public class DeviceStateCache {
         return snapshots;
     }
 
+    /** 强制现场刷新并返回（压测 A/B 用：cache=false 时每请求都真探测）。 */
+    public Map<Long, DevSnapshot> probeNow() {
+        safeRefresh();
+        return snapshots;
+    }
+
     private void safeRefresh() {
         try {
             refresh();
