@@ -38,4 +38,7 @@ public interface LiftingRodService extends IService<BizLiftingRod> {
      * @return 设备探测视图（可能为 null，若无绑定转换器）
      */
     DeviceInfoVO reconcile(Long rodId);
+
+    /** 批量对账：以设备快照真实态校正所有绑定杆，返回变更数。 */
+    int reconcileAll();
 }

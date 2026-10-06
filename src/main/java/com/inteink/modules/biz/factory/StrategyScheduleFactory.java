@@ -59,13 +59,32 @@ public class StrategyScheduleFactory {
         }
         createOne(strategy, StrategyNodeTypeEnum.BEGIN, strategy.getStrategyAction(), beginCron);
 
+        String endCron = null;
         if (StringUtils.isNotBlank(detail.getDetailEnd())) {
-            String endCron = StrategyCronUtil.build(strategy, detail.getDetailEnd());
+            endCron = StrategyCronUtil.build(strategy, detail.getDetailEnd());
             if (StringUtils.isNotBlank(endCron)) {
                 createOne(strategy, StrategyNodeTypeEnum.END, reverse(strategy.getStrategyAction()), endCron);
             }
         }
+        warnIfHalfWindow(strategy.getStrategyId(), beginCron, endCron);
         log.info("策略定时任务生成完成，strategyId={}", strategy.getStrategyId());
+    }
+
+    /** 若本周期 END 下一次触发早于 BEGIN（审核晚于 begin / 漏触发→半程），留痕提醒；执行侧 END 守卫会兜底跳过。 */
+    private void warnIfHalfWindow(Long strategyId, String beginCron, String endCron) {
+        if (endCron == null) {
+            return;
+        }
+        try {
+            java.util.Date now = new java.util.Date();
+            java.util.Date b = new org.quartz.CronExpression(beginCron).getNextValidTimeAfter(now);
+            java.util.Date e = new org.quartz.CronExpression(endCron).getNextValidTimeAfter(now);
+            if (b != null && e != null && e.before(b)) {
+                log.warn("策略{}本周期 END 早于 BEGIN 触发（审核晚于begin/漏触发），END 守卫将跳过该半程动作", strategyId);
+            }
+        } catch (java.text.ParseException ex) {
+            log.warn("策略{} cron 校验失败：{}", strategyId, ex.getMessage());
+        }
     }
 
     private void createOne(BizLiftingStrategy strategy, StrategyNodeTypeEnum node, Integer action, String cron) {

@@ -41,6 +41,7 @@ public class LiftingRodServiceImpl extends ServiceImpl<BizLiftingRodMapper, BizL
 
     private final ReliableRodCommandService reliableRodCommandService;
     private final DeviceQueryService deviceQueryService;
+    private final com.inteink.modules.biz.service.DeviceStateCache deviceStateCache;
     private final BizConverterMapper converterMapper;
 
     @Override
@@ -175,6 +176,33 @@ public class LiftingRodServiceImpl extends ServiceImpl<BizLiftingRodMapper, BizL
         rod.setRodUpdatetime(now);
         this.updateById(rod);
         return vo;
+    }
+
+    @Override
+    public int reconcileAll() {
+        List<BizLiftingRod> rods = this.list(new LambdaQueryWrapper<BizLiftingRod>()
+                .eq(BizLiftingRod::getRodStatus, STATUS_VALID));
+        Map<Long, com.inteink.modules.biz.service.DeviceStateCache.DevSnapshot> snaps = deviceStateCache.snapshot();
+        long now = System.currentTimeMillis() / 1000;
+        int changed = 0;
+        for (BizLiftingRod rod : rods) {
+            com.inteink.modules.biz.service.DeviceStateCache.DevSnapshot snap = snaps.get(rod.getRodId());
+            if (snap == null) {
+                continue;
+            }
+            int newOffline = snap.online() ? 1 : 0;
+            Integer newState = (snap.online() && snap.state() != null) ? snap.state() : rod.getRodState();
+            boolean diff = !java.util.Objects.equals(newState, rod.getRodState())
+                    || !java.util.Objects.equals(newOffline, rod.getRodOffline());
+            if (diff) {
+                rod.setRodState(newState);
+                rod.setRodOffline(newOffline);
+                rod.setRodUpdatetime(now);
+                this.updateById(rod);
+                changed++;
+            }
+        }
+        return changed;
     }
 
     private BizLiftingRod getValidRod(Long rodId) {

@@ -509,6 +509,23 @@ INSERT INTO `sys_menu` VALUES (180, 1, 1, '赛迪云短信', NULL, NULL, NULL, N
 INSERT INTO `sys_menu` VALUES (181, 1, 2, '查询', 'sys:alioss:info', NULL, NULL, NULL, NULL, NULL, 180, '0,111,180', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
 INSERT INTO `sys_menu` VALUES (182, 1, 2, '修改', 'sys:alioss:update,sys:alioss:info', NULL, NULL, NULL, NULL, NULL, 180, '0,111,180', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
 
+-- 道闸业务菜单与权限（开发员角色自动拥有全部菜单权限）
+INSERT INTO `sys_menu` VALUES (200, 1, 1, '道闸杆', 'biz:liftingrod:list,biz:liftingrod:info', NULL, NULL, NULL, NULL, '/biz/liftingrod', 111, '0,111', 200, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (201, 1, 2, '新增', 'biz:liftingrod:save', NULL, NULL, NULL, NULL, NULL, 200, '0,111,200', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (202, 1, 2, '修改', 'biz:liftingrod:update', NULL, NULL, NULL, NULL, NULL, 200, '0,111,200', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (203, 1, 2, '删除', 'biz:liftingrod:delete', NULL, NULL, NULL, NULL, NULL, 200, '0,111,200', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (210, 1, 1, '转换器', 'biz:converter:list,biz:converter:info', NULL, NULL, NULL, NULL, '/biz/converter', 111, '0,111', 210, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (211, 1, 2, '新增', 'biz:converter:save', NULL, NULL, NULL, NULL, NULL, 210, '0,111,210', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (212, 1, 2, '修改', 'biz:converter:update', NULL, NULL, NULL, NULL, NULL, 210, '0,111,210', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (213, 1, 2, '删除', 'biz:converter:delete', NULL, NULL, NULL, NULL, NULL, 210, '0,111,210', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (220, 1, 1, '升降策略', 'biz:liftingstrategy:list,biz:liftingstrategy:info', NULL, NULL, NULL, NULL, '/biz/liftingstrategy', 111, '0,111', 220, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (221, 1, 2, '新增', 'biz:liftingstrategy:save', NULL, NULL, NULL, NULL, NULL, 220, '0,111,220', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (222, 1, 2, '修改', 'biz:liftingstrategy:update', NULL, NULL, NULL, NULL, NULL, 220, '0,111,220', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (223, 1, 2, '审核', 'biz:liftingstrategy:audit', NULL, NULL, NULL, NULL, NULL, 220, '0,111,220', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (224, 1, 2, '删除', 'biz:liftingstrategy:delete', NULL, NULL, NULL, NULL, NULL, 220, '0,111,220', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (225, 1, 2, '暂停', 'biz:liftingstrategy:pause', NULL, NULL, NULL, NULL, NULL, 220, '0,111,220', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
+INSERT INTO `sys_menu` VALUES (226, 1, 2, '恢复', 'biz:liftingstrategy:resume', NULL, NULL, NULL, NULL, NULL, 220, '0,111,220', 0, unix_timestamp(now()), unix_timestamp(now()), 0);
+
 -- ----------------------------
 -- Records of sys_role
 -- ----------------------------
