@@ -69,6 +69,7 @@ public class ShiroConfig {
         filterMap.put("/aaa.txt", "anon");
         filterMap.put("/app/**", "anon");
         filterMap.put("/etc/test/**", "anon");
+        filterMap.put("/dashboard.html", "anon");
         filterMap.put("/**", "oauth2");
         shiroFilter.setFilterChainDefinitionMap(filterMap);
 

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>道闸实时看板</title>
+    <style>
+        body { font-family: system-ui, "Microsoft YaHei", sans-serif; margin: 20px; color: #222; }
+        h2 { margin-bottom: 8px; }
+        .bar { margin-bottom: 12px; }
+        input#token { width: 360px; padding: 4px; }
+        button { padding: 4px 10px; }
+        #summary { margin: 10px 0; }
+        #summary span { display: inline-block; margin-right: 16px; padding: 4px 10px; border-radius: 4px; background: #f2f4f7; }
+        #summary .off { background: #fde2e2; color: #c0392b; }
+        #summary .on { background: #e3f6e6; color: #2c7a3f; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; font-size: 14px; }
+        th { background: #fafafa; }
+        td.off { color: #c0392b; font-weight: bold; }
+        td.on { color: #2c7a3f; }
+        .muted { color: #888; }
+    </style>
+</head>
+<body>
+<h2>道闸实时看板 <span class="muted" style="font-size:13px">(每 5s 轮询 liveStatus)</span></h2>
+<div class="bar">
+    Token: <input id="token" placeholder="粘贴登录 token">
+    <button onclick="saveToken()">保存</button>
+    <span id="updated" class="muted"></span>
+</div>
+<div id="summary"></div>
+<table>
+    <thead>
+    <tr><th>杆名称</th><th>库内状态</th><th>设备SN</th><th>设备实时态</th><th>实时在线</th><th>设备地址</th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+</table>
+<script>
+    var API = 'biz/rod/liveStatus';
+    function saveToken() {
+        localStorage.setItem('dash_token', document.getElementById('token').value);
+        load();
+    }
+    function esc(s) {
+        return (s == null ? '' : String(s)).replace(/[&<>]/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c];
+        });
+    }
+    async function load() {
+        var t = document.getElementById('token').value || localStorage.getItem('dash_token') || '';
+        var summary = document.getElementById('summary');
+        var rows = document.getElementById('rows');
+        try {
+            var r = await fetch(API, { headers: { token: t } });
+            if (!r.ok) { summary.innerHTML = '<span class="off">未授权(' + r.status + ')，请在上方填入有效 token</span>'; return; }
+            var j = await r.json();
+            if (j.code && j.code !== 0) { summary.innerHTML = '<span class="off">' + esc(j.msg || j.code) + '</span>'; return; }
+            var d = j.data || {};
+            summary.innerHTML =
+                '<span>总数 ' + (d.total || 0) + '</span>' +
+                '<span class="on">在线 ' + (d.onlineCount || 0) + '</span>' +
+                '<span class="off">离线 ' + (d.offlineCount || 0) + '</span>' +
+                '<span>未绑定 ' + (d.unboundCount || 0) + '</span>';
+            var html = '';
+            (d.rods || []).forEach(function (x) {
+                var online = x.deviceOnline === true;
+                var onlineCell = !x.bound ? '<span class="muted">未绑定</span>' : (online ? '在线' : '离线');
+                html += '<tr>'
+                    + '<td>' + esc(x.rodName) + '</td>'
+                    + '<td>' + esc(x.rodStateDesc) + '</td>'
+                    + '<td>' + esc(x.deviceSn || '-') + '</td>'
+                    + '<td>' + esc(x.bound ? (x.deviceStateDesc || (x.deviceState == null ? '-' : x.deviceState)) : '-') + '</td>'
+                    + '<td class="' + (x.bound ? (online ? 'on' : 'off') : 'muted') + '">' + onlineCell + '</td>'
+                    + '<td class="muted">' + esc(x.deviceAddr || '-') + '</td>'
+                    + '</tr>';
+            });
+            rows.innerHTML = html || '<tr><td colspan="6" class="muted">暂无杆</td></tr>';
+            document.getElementById('updated').textContent = '更新于 ' + new Date().toLocaleTimeString();
+        } catch (e) {
+            summary.innerHTML = '<span class="off">请求失败: ' + esc(e.message) + '</span>';
+        }
+    }
+    document.getElementById('token').value = localStorage.getItem('dash_token') || '';
+    load();
+    setInterval(load, 5000);
+</script>
+</body>
+</html>

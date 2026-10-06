@@ -7,8 +7,10 @@ import com.inteink.modules.biz.model.entity.BizLiftingRod;
 import com.inteink.modules.biz.model.enums.RodActionEnum;
 import com.inteink.modules.biz.model.enums.RodLogTypeEnum;
 import com.inteink.modules.biz.model.form.LiftingRodForm;
+import com.inteink.modules.biz.model.vo.DashboardVO;
 import com.inteink.modules.biz.model.vo.DeviceInfoVO;
 import com.inteink.modules.biz.model.vo.LiftingRodVO;
+import com.inteink.modules.biz.service.DashboardService;
 import com.inteink.modules.biz.service.LiftingRodService;
 import com.inteink.modules.sys.controller.AbstractController;
 import io.swagger.annotations.Api;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 public class LiftingRodController extends AbstractController {
 
     private final LiftingRodService liftingRodService;
+    private final DashboardService dashboardService;
 
     @ApiOperation("分页查询杆")
     @ApiOperationSupport(order = 1)
@@ -93,5 +96,12 @@ public class LiftingRodController extends AbstractController {
     @RequiresPermissions("biz:liftingrod:update")
     public Result<DeviceInfoVO> reconcile(@PathVariable("rodId") Long rodId) {
         return Result.ok(liftingRodService.reconcile(rodId), "对账完成");
+    }
+
+    @ApiOperation("看板实时状态聚合")
+    @GetMapping("/liveStatus")
+    @RequiresPermissions("biz:liftingrod:list")
+    public Result<DashboardVO> liveStatus() {
+        return Result.ok(dashboardService.dashboard());
     }
 }
